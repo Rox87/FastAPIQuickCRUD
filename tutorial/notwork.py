@@ -6,13 +6,11 @@ from fastapi_quickcrud import crud_router_builder
 
 app = FastAPI()
 
-Base = declarative_base()
-metadata = Base.metadata
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-
-engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,
-                             pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
+DATABASE_URL = "sqlite+aiosqlite:///teste2.db"
+engine = create_async_engine(DATABASE_URL, echo=True)
+# engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
 async_session = sessionmaker(bind=engine, class_=AsyncSession)
 
 
@@ -1228,7 +1226,15 @@ class ChildSecond(Base):
     __tablename__ = 'test_right_second'
     id = Column(Integer, primary_key=True)
 
+from fastapi import APIRouter            
+router = APIRouter()
 
+@router.on_event("startup")
+async def startup_db():
+    # Create tables on application startup
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        
 crud_route_child = crud_router_builder(db_session=get_transaction_session,
                                        db_model=Child,
                                        prefix="/child",
@@ -1257,10 +1263,8 @@ crud_route_association = crud_router_builder(db_session=get_transaction_session,
                                              prefix="/association",
                                              tags=["association"]
                                              )
-
-[app.include_router(i) for i in
- [crud_route_association_table_second, crud_route_child_second, crud_route_parent, crud_route_child,
-  crud_route_association]]
+[app.include_router(i) for i in [router,crud_route_child]]
+#[app.include_router(i) for i in [router,crud_route_association_table_second, crud_route_child_second, crud_route_parent, crud_route_child, crud_route_association]]
 
 # crud_route_2 = crud_router_builder(db_session=get_transaction_session,
 #                                    db_model=UntitledTable256,
@@ -1271,4 +1275,4 @@ crud_route_association = crud_router_builder(db_session=get_transaction_session,
 #                                    prefix="/friend",
 #                                    )
 # app.include_router(crud_route_2)
-uvicorn.run(app, host="0.0.0.0", port=8002, debug=False)
+uvicorn.run(app, host="0.0.0.0", port=8002, debug=True)
