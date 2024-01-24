@@ -3,11 +3,11 @@ from fastapi import FastAPI
 from sqlalchemy import Column, Integer, \
     String, Table, ForeignKey, orm
 from fastapi_quickcrud import crud_router_builder
-
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 Base = orm.declarative_base()
 
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
 DATABASE_URL = "sqlite+aiosqlite:///./db/friend.db"
 engine = create_async_engine(DATABASE_URL, echo=True)
 # engine = create_async_engine('postgresql+asyncpg://postgres:1234@127.0.0.1:5432/postgres', future=True, echo=True,pool_use_lifo=True, pool_pre_ping=True, pool_recycle=7200)
